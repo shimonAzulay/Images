@@ -22,19 +22,25 @@ class PixabayImagesViewModel {
   let imageDataCache = ImageDataCache()
   
   private let imagesSubject = CurrentValueSubject<[Image], Never>([])
-  private var imageName: String? = "dog"
+  private var imageName: String?
+  private var currentPage = 0
   private var cancellables = Set<AnyCancellable>()
   
   func reset(toImageName imageName: String?) {
     self.imageName = imageName
+    currentPage = 0
     imagesSubject.send([])
   }
   
-  func fetchMoreImages(page: UInt) throws {
-    guard let imageName else {
+  func fetchMoreImages() throws {
+    guard let imageName,
+          imageName.isEmpty == false else {
       throw PixabayImagesViewModel.Error.invalidImageName
     }
-    guard let url = URL(string: "https://pixabay.com/api/?key=19057131-d585b08b5672c1d1e3966d2e0&q=\(imageName)&image_type=photo&per_page=30&page=\(page)") else {
+    
+    currentPage += 1
+    print("Fetching page: \(currentPage)")
+    guard let url = URL(string: "https://pixabay.com/api/?key=19057131-d585b08b5672c1d1e3966d2e0&q=\(imageName)&image_type=photo&per_page=30&page=\(currentPage)") else {
       throw PixabayImagesViewModel.Error.invalidUrl
     }
     

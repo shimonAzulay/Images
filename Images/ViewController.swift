@@ -47,7 +47,7 @@ private extension ViewController {
   
   func setupSearchTextField() {
     container.addArrangedSubview(searchTextField)
-    searchTextField.addTarget(self, action: #selector(textFieldDidEnd), for: .editingDidEnd)
+    searchTextField.addTarget(self, action: #selector(textFieldDidEnd), for: .editingChanged)
   }
   
   func setupImageCollectionView() {

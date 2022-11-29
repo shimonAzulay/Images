@@ -10,7 +10,9 @@ import Combine
 
 class ImagesCollectionViewController: UICollectionViewController {
   var viewModel: PixabayImagesViewModel!
-  var cancellables = Set<AnyCancellable>()
+  private var cancellables = Set<AnyCancellable>()
+  private var shouldFetchMore = true
+  
   var images = [Image]() {
     didSet {
       collectionView.reloadData()
@@ -23,16 +25,21 @@ class ImagesCollectionViewController: UICollectionViewController {
     viewModel.imagesPublisher
       .receive(on: DispatchQueue.main)
       .sink { [weak self] in
+        guard $0.isEmpty == false else {
+          self?.images.removeAll()
+          self?.shouldFetchMore = false
+          try? self?.viewModel.fetchMoreImages()
+          return
+        }
+        
+        self?.shouldFetchMore = true
         self?.images.append(contentsOf: $0)
       }
       .store(in: &cancellables)
-    
-    try? viewModel.fetchMoreImages(page: 1)
   }
   
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
-    try? viewModel.fetchMoreImages(page: 1)
   }
   
   override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -55,10 +62,11 @@ class ImagesCollectionViewController: UICollectionViewController {
   }
   
   override func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-    if indexPath.row > images.count - 10 {
+    if indexPath.row > images.count - 10,
+       shouldFetchMore {
       do {
-        print("Will fetch more images: \(indexPath.row), \(images.count)")
-        try viewModel.fetchMoreImages(page: UInt(indexPath.row / (images.count + 1)) + 1)
+        shouldFetchMore = false
+        try viewModel.fetchMoreImages()
       } catch {
         print(error.localizedDescription)
       }
